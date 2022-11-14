@@ -1,0 +1,387 @@
+DACalc
+
+import java.rmi.*;  
+public interface DACalculator extends Remote{  
+public double calculate(double x,double y)throws RemoteException;  
+}  
+
+DACalcR
+
+import java.rmi.*;  
+import java.rmi.server.*;  
+public class DACalculatorRemote extends UnicastRemoteObject implements DACalculator{  
+DACalculatorRemote()throws RemoteException{  
+super();  
+}  
+public double calculate(double x,double y){return x*y;}  
+}  
+
+MyServer
+
+import java.rmi.*;  
+import java.rmi.registry.*;  
+public class MyServer{  
+public static void main(String args[]){  
+try{  
+DACalculator stub=new DACalculatorRemote();  
+Naming.rebind("rmi://localhost:5000/sonoo",stub);  
+}catch(Exception e){System.out.println(e);}  
+}  
+}  
+
+MyClient
+
+import java.rmi.*;
+import java.util.*;
+public class MyClient{
+public static void main(String args[]){
+try{
+DACalculator stub=(DACalculator)Naming.lookup("rmi://localhost:5000/sonoo");
+System.out.println("Enter DA percentage (Eg - 12): ");
+Scanner sc = new Scanner(System.in);
+double pa = sc.nextInt()/100.0;
+System.out.println("Enter Basic Salary : ");
+double sa = sc.nextDouble();
+System.out.println("Your DA is "+ stub.calculate(pa,sa));
+}catch(Exception e){}
+}
+}
+
+Java <allfiles>
+Rmic <interfaceRemote>
+Rmiregistry 5000
+Java server
+Java client
+
+****************
+
+#include<stdio.h>
+#include<mpi.h>
+int main(int argc,char**argv)
+{
+ //Initialize the MPI env
+ MPI_Init(NULL,NULL);
+ //Get the number of processes
+ int world_size;
+ MPI_Comm_size(MPI_COMM_WORLD,&world_size);
+ //Get the rank of the processor
+ int world_rank;
+ MPI_Comm_rank(MPI_COMM_WORLD,&world_rank);
+ //Get the name of the processor
+ char processor_name[MPI_MAX_PROCESSOR_NAME];
+ int name_len;
+ MPI_Get_processor_name(processor_name,&name_len);
+ //Print off a hello world message
+ printf("HELLO WORLD FROM PROCESSOR %s, rank %d out of %d PROCESSORS\n",processor_name,world_rank,world_size);
+ //Finalize the MPI environment
+ MPI_Finalize();
+}
+
+
+****************
+
+#include <stdio.h>
+#include <mpi.h>
+int main(int argc,char**argv)
+{
+MPI_Init(NULL,NULL);
+int world_rank;    
+MPI_Comm_rank(MPI_COMM_WORLD,&world_rank);
+
+if (world_rank == 1 ) {
+    int message = 25;
+    	MPI_Send(&message, 1, MPI_INT, 0, 0,
+             	MPI_COMM_WORLD);
+    	printf("\n%d sent to Processor 0\n",message);
+	} else {
+	int recv;
+    	MPI_Recv(&recv, 1, MPI_INT, 1, 0,
+             	MPI_COMM_WORLD, MPI_STATUS_IGNORE);
+    	printf("\n%d received from processor 1\n", recv);
+	}
+    
+MPI_Finalize();
+    }
+
+****************
+
+#include <stdio.h>
+#include <mpi.h>
+
+int main(int argc,char**argv)
+{
+MPI_Init(NULL,NULL);
+int world_rank;    
+MPI_Comm_rank(MPI_COMM_WORLD,&world_rank);
+
+if (world_rank == 0 ) {
+    char message = 'H';
+    	MPI_Bcast(&message, 1, MPI_CHAR, 0,MPI_COMM_WORLD);
+    	printf("\nProcessor %d is Broadcasting %c\n",world_rank,message);
+	} else {
+	char recv;
+    	MPI_Bcast(&recv, 1, MPI_CHAR, 0,MPI_COMM_WORLD);
+    	printf("Processor %d received %c from processor 0\n", world_rank,recv);
+	}
+    
+MPI_Finalize();
+    
+}
+
+
+****************
+
+#include<stdio.h>
+#include<omp.h>
+#include <time.h>
+#include<stdlib.h>
+
+int main()
+{
+    
+    int sum = 0;
+    int first,last;
+    
+    #pragma omp parallel for firstprivate(first) lastprivate(last) reduction(+:sum)
+	 for ( int i=1; i<=100; i++ )
+    {
+   	 sum+=i;
+   	 first = i;
+   	 last = i;
+    }
+    
+    printf("First Private: %d\n",first);
+    printf("Last Private: %d\n",last);
+    printf("First Private: %d\n",sum);
+    
+    	return 0;
+}
+
+****************
+
+#include <mpi.h>
+#include <stdio.h>
+#include<stdbool.h>
+
+int bcastInt()
+{
+	int rank;
+        int buf ;
+        const int root=0;
+
+        MPI_Comm_rank(MPI_COMM_WORLD, &rank);
+
+	if ( rank == root ) 
+		buf = 1000;
+        MPI_Bcast(&buf, 1, MPI_INT, root, MPI_COMM_WORLD);
+        if (rank == root)
+		printf("[%d]: Broadcasted, buf is %d\n", rank, buf);
+	else
+		printf("[%d]: Received, buf is %d\n", rank, buf);
+}
+
+int bcastChar()
+{
+	int rank;
+        char buf ;
+        const int root=0;
+
+        MPI_Comm_rank(MPI_COMM_WORLD, &rank);
+
+	if ( rank == root ) 
+		buf = 'A';
+        MPI_Bcast(&buf, 1, MPI_CHAR, root, MPI_COMM_WORLD);
+        if (rank == root)
+		printf("[%d]: Broadcasted, buf is %c\n", rank, buf);
+	else
+		printf("[%d]: Received, buf is %c\n", rank, buf);
+}
+
+int bcastDouble()
+{
+	int rank;
+        double buf ;
+        const int root=0;
+
+        MPI_Comm_rank(MPI_COMM_WORLD, &rank);
+
+	if ( rank == root ) 
+		buf = 3.1415926;
+        MPI_Bcast(&buf, 1, MPI_DOUBLE, root, MPI_COMM_WORLD);
+        if (rank == root)
+		printf("[%d]: Broadcasted, buf is %lf\n", rank, buf);
+	else
+		printf("[%d]: Received, buf is %lf\n", rank, buf);
+}
+
+int bcastFloat()
+{
+	int rank;
+        float buf ;
+        const int root=0;
+
+        MPI_Comm_rank(MPI_COMM_WORLD, &rank);
+
+	if ( rank == root ) 
+		buf = 3.14;
+        MPI_Bcast(&buf, 1, MPI_FLOAT, root, MPI_COMM_WORLD);
+        if (rank == root)
+		printf("[%d]: Broadcasted, buf is %f\n", rank, buf);
+	else
+		printf("[%d]: Received, buf is %f\n", rank, buf);
+}
+
+int bcastBool()
+{
+	int rank;
+        bool buf ;
+        const int root=0;
+
+        MPI_Comm_rank(MPI_COMM_WORLD, &rank);
+
+	if ( rank == root ) 
+		buf = 0;
+        MPI_Bcast(&buf, 1, MPI_CXX_BOOL, root, MPI_COMM_WORLD);
+        if (rank == root)
+		printf("[%d]: Broadcasted, buf is %d\n", rank, buf);
+	else
+		printf("[%d]: Received, buf is %d\n", rank, buf);
+}
+
+int main(int argc, char** argv) {
+        int rank;
+        int buf;
+        int sz;
+        const int root=0;
+
+        MPI_Init(NULL,NULL);
+        MPI_Comm_rank(MPI_COMM_WORLD, &rank);
+	MPI_Comm_size(MPI_COMM_WORLD,&sz);
+
+        bcastInt();
+        bcastChar();
+        bcastDouble();
+        bcastFloat();
+        bcastBool();
+        MPI_Finalize();
+
+        return 0;
+}
+
+
+****************
+
+#include<stdio.h>
+#include<omp.h>
+#include <time.h>
+#include<stdlib.h>
+
+void merge(int arr[], int l, int m, int r)
+{
+	int i, j, k;
+	int n1 = m - l + 1;
+	int n2 = r - m;
+ 
+	int L[n1], R[n2];
+ 
+	for (i = 0; i < n1; i++)
+    	L[i] = arr[l + i];
+	for (j = 0; j < n2; j++)
+    	R[j] = arr[m + 1 + j];
+ 
+	i = 0; // Initial index of first subarray
+	j = 0; // Initial index of second subarray
+	k = l; // Initial index of merged subarray
+	while (i < n1 && j < n2) {
+    	if (L[i] <= R[j]) {
+        	arr[k] = L[i];
+        	i++;
+    	}
+    	else {
+        	arr[k] = R[j];
+        	j++;
+    	}
+    	k++;
+	}
+ 
+	while (i < n1) {
+    	arr[k] = L[i];
+    	i++;
+    	k++;
+	}
+	while (j < n2) {
+    	arr[k] = R[j];
+    	j++;
+    	k++;
+	}
+}
+ 
+void merge_sort_serial(int arr[], int l, int r)
+{
+	if (l < r) {
+    	int m = l + (r - l) / 2;
+ 
+    	merge_sort_serial(arr, l, m);
+    	merge_sort_serial(arr, m + 1, r);
+ 
+    	merge(arr, l, m, r);
+	}
+}
+
+void parallel_merge_sort (int a[], int l,int r, int threads)
+{  
+	if ( threads == 1)  	 
+	{
+    	merge_sort_serial(a, l, r);
+	}
+	else if (threads > 1)
+	{
+     	int m = l + (r - l) / 2;
+     	#pragma omp parallel sections
+     	{
+ 
+         	#pragma omp section
+         	parallel_merge_sort(a, l,m, threads/2);
+         	#pragma omp section
+         	parallel_merge_sort(a, m+1 ,r, threads - threads/2);
+     	}
+     	merge(a,l,m,r);
+	}
+}
+
+
+void binarySearch(int array[],int search,int n)
+{   
+int first = 0;  
+int last = n - 1;  
+	int middle = (first + last) / 2;  
+	while (first <= last)  
+	{  
+    	if (array[middle] < search) first = middle + 1;  
+    	else if (array[middle] == search)
+        	break;  
+    	else last = middle - 1;  
+    	middle = (first + last) / 2;  
+	}
+}
+
+int main()
+{
+    	int x[150000];
+    	for ( int i=0; i<150000; i++ ) x[i] = 150000-i;
+    	clock_t start = clock();
+    	#pragma omp parallel reduction(+:x)
+    	{
+    parallel_merge_sort(x,0,149999,4);
+    binarySearch(x,10000,150000);
+    }
+	clock_t end1 = clock();
+	merge_sort_serial(x,0,149999);
+	binarySearch(x,10000,150000);
+	clock_t end2 = clock();
+	double cpu_time_used1 = ((double) (end1 - start)) / CLOCKS_PER_SEC;
+	double cpu_time_used2 = ((double) (end2 - end1)) / CLOCKS_PER_SEC;
+	printf("Time taken: for parallel: %lf seconds\nTime taken: for serial: %lf seconds\n",cpu_time_used1,cpu_time_used2);
+   	 
+    	return 0;
+}
